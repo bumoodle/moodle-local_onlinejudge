@@ -169,21 +169,37 @@ class judge_base{
      * @return array of the full path of saved files
      */
     protected function create_temp_files() {
-        $dstfiles = array();
+        $target_files = array();
 
+        //Get all of the user's submitted files from the uploaded file area.
         $fs = get_file_storage();
         $files = $fs->get_area_files(get_context_instance(CONTEXT_SYSTEM)->id, 'local_onlinejudge', 'tasks', $this->task->id, 'sortorder', false);
+
+        $temp_dir = onlinejudge_get_temp_dir();
+
+        // And add each file to the Judge's temporary directory.
         foreach ($files as $file) {
-            $path = onlinejudge_get_temp_dir().$file->get_filepath();
-            $fullpath = $path.$file->get_filename();
+
+          $file_path = $file->get_filepath();
+
+            // Get a reference to the Judge's temporary directory.
+            $path = $temp_dir.$file->get_filepath();
+
+            // If that doesn't exist, thrown an error.
             if (!check_dir_exists($path)) {
                 throw new moodle_exception('errorcreatingdirectory', '', '', $path);
             }
+
+            //Create a copy of each of the user's files in the temporary directory.
+            $fullpath = $path.$file->get_filename();
             $file->copy_content_to($fullpath);
-            $dstfiles[] = $fullpath;
+
+            //And add the file to our destiantion file array.
+            $target_files[] = $fullpath;
         }
 
-        return $dstfiles;
+        //Return the composed list of target files.
+        return $target_files;
     }
 
     /**
@@ -204,6 +220,44 @@ class judge_base{
     static function is_available() {
         return false;
     }
+}
+
+/**
+ * Container class for the online judge functions.
+ */
+class online_judge {
+
+    const TASK_TABLE = 'onlinejudge_tasks';
+
+    //TODO: Replace the above constants with the below class constants.
+    const STATUS_PENDING = ONLINEJUDGE_STATUS_PENDING;
+    const STATUS_ACCEPTED = ONLINEJUDGE_STATUS_ACCEPTED;
+    const STATUS_COMPILATION_ERROR = ONLINEJUDGE_STATUS_COMPILATION_ERROR;
+
+    /**
+     * Returns the task's relative position in the queue.
+     *
+     * @return int The number of tasks before this one in the queue.
+     */
+    public static function position_in_queue($task_id) {
+        global $DB;
+
+        //Find the count of all tasks who have a lower ID (and thus will be judged first) and have not yet been finished judging.
+        return $DB->count_records_select(self::TASK_TABLE, 'id < ? AND (status = ? OR status = ?)', array($task_id, ONLINEJUDGE_STATUS_PENDING, ONLINEJUDGE_STATUS_JUDGING));
+    }
+
+
+    /**
+     * Return detail of the task
+     *
+     * @param int $taskid
+     * @return object of task or null if unavailable
+     */
+    public static function get_task_record($id) {
+        global $DB;
+        return $DB->get_record(self::TASK_TABLE, array('id' => $id));
+    }
+
 }
 
 /**
@@ -250,17 +304,22 @@ function onlinejudge_get_compiler_info($language) {
 /**
  * Submit task to judge
  *
- * @param int $cmid ID of coursemodule
+ * @param int $instance_id ID of coursemodule
  * @param int $userid ID of user
  * @param string $language ID of the language
  * @param array $files array of stored_file of source code or array of filename => filecontent
  * @param object $options include input, output and etc.
  * @return id of the task or throw exception
  */
-function onlinejudge_submit_task($cmid, $userid, $language, $files, $component, $options) {
+function onlinejudge_submit_task($instance_id, $userid, $language, $files, $component, $options, $slot = 0) {
     global $DB;
 
-    $task->cmid = $cmid;
+    $task = new stdClass;
+
+    //TODO: change to contextid
+    $task->instanceid = $instance_id;
+    $task->slot = $slot;
+
     $task->userid = $userid;
     $task->status = ONLINEJUDGE_STATUS_PENDING;
     $task->submittime = time();
@@ -282,6 +341,7 @@ function onlinejudge_submit_task($cmid, $userid, $language, $files, $component, 
     $task->id = $DB->insert_record('onlinejudge_tasks', $task);
 
     $fs = get_file_storage();
+    $file_record = new stdClass;
     $file_record->contextid = get_context_instance(CONTEXT_SYSTEM)->id;
     $file_record->component = 'local_onlinejudge';
     $file_record->filearea = 'tasks';
@@ -352,13 +412,12 @@ function onlinejudge_judge($taskorid) {
 /**
  * Return detail of the task
  *
+ * @deprecated
  * @param int $taskid
  * @return object of task or null if unavailable
  */
 function onlinejudge_get_task($taskid) {
-    global $DB;
-
-    return $DB->get_record('onlinejudge_tasks', array('id' => $taskid));
+    return online_judge::get_task_record($taskid);
 }
 
 /**
@@ -411,14 +470,14 @@ function onlinejudge_judge_name($language) {
 /**
  * Delete related records
  *
- * @param int $cmid
+ * @param int $instanceid
  */
-function onlinejudge_delete_coursemodule($cmid) {
+function onlinejudge_delete_coursemodule($instance_id, $slot = 0) {
     global $DB;
 
     // Mark them as deleted only and keep the statistics.
     // Delete them really in cron
-    return $DB->set_field('onlinejudge_tasks', 'deleted', 1, array('cmid' => $cmid));
+    return $DB->set_field('onlinejudge_tasks', 'deleted', 1, array('instanceid' => $instanceid, 'slot' => $slot));
 }
 
 function onlinejudge_get_temp_dir() {

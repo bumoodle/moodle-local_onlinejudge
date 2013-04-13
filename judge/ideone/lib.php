@@ -224,7 +224,9 @@ class judge_ideone extends judge_base
      * @return true for yes, false for no
      */
     static function is_available() {
-        return true;
+
+        //TODO: port me to ideone model?
+        return false;
     }
 }
 

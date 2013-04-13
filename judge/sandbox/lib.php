@@ -39,10 +39,10 @@ define('SANDBOX_SAND', escapeshellcmd($CFG->dirroot.'/local/onlinejudge/judge/sa
 
 class judge_sandbox extends judge_base {
     protected static $supported_languages = array(
-        'c' => 'gcc -m32 -D_MOODLE_ONLINE_JUDGE_ -Wall -static -o %DEST% %SOURCES% -lm',
-        'c_warn2err' => 'gcc -m32 -D_MOODLE_ONLINE_JUDGE_ -Wall -Werror -static -o %DEST% %SOURCES% -lm',
-        'cpp' => 'g++ -m32 -D_MOODLE_ONLINE_JUDGE_ -Wall -static -o %DEST% %SOURCES% -lm',
-        'cpp_warn2err' => 'g++ -m32 -D_MOODLE_ONLINE_JUDGE_ -Wall -Werror -static -o %DEST% %SOURCES% -lm'
+        'c' => 'gcc -m32 -I%INCLUDE% -D_MOODLE_ONLINE_JUDGE_ -Wall -static -o %DEST% %SOURCES% -lm',
+        'c_warn2err' => 'gcc -m32 -I%INCLUDE% -D_MOODLE_ONLINE_JUDGE_ -Wall -Werror -static -o %DEST% %SOURCES% -lm',
+        'cpp' => 'g++ -m32 -I%INCLUDE% -D_MOODLE_ONLINE_JUDGE_ -Wall -static -o %DEST% %SOURCES% -lm',
+        'cpp_warn2err' => 'g++ -m32 -I%INCLUDE% -D_MOODLE_ONLINE_JUDGE_ -Wall -Werror -static -o %DEST% %SOURCES% -lm'
     );
 
     static function get_languages() {
@@ -63,6 +63,7 @@ class judge_sandbox extends judge_base {
         $replace = array('"'.implode('" "', $files).'"', '"'.onlinejudge_get_temp_dir().'/a.out"');
         // construct compiler command
         $command = str_replace($search, $replace, self::$supported_languages[$this->language]);
+        $command = str_replace('%INCLUDE%', dirname(__FILE__).'/include', $command);
 
         // run compiler and redirect stderr to stdout
         $output = array();
@@ -112,14 +113,19 @@ class judge_sandbox extends judge_base {
      * Whether the last task is using the same program with current task
      */
     protected function last_task_is_simlar() {
+
         static $last_contenthashs = array();
         $new_contenthashs = array();
 
         $fs = get_file_storage();
         $files = $fs->get_area_files(get_context_instance(CONTEXT_SYSTEM)->id, 'local_onlinejudge', 'tasks', $this->task->id, 'sortorder', false);
+
         foreach ($files as $file) {
             $new_contenthashs[] = $file->get_contenthash();
         }
+
+        //Append the testbench's hash to the list of the active file hashes.
+        $new_contenthashs[] = sha1($this->task->input);
 
         $result = $last_contenthashs == $new_contenthashs;
         $last_contenthashs = $new_contenthashs;
@@ -159,16 +165,26 @@ class judge_sandbox extends judge_base {
             throw new onlinejudge_exception('sandboxerror');
         }
 
+        $token = self::generate_token();
+
         // $pipes now looks like this:
         // 0 => writeable handle connected to child stdin
         // 1 => readable handle connected to child stdout
         // Any error output will be appended to $exec_file.err
-        fwrite($pipes[0], $this->task->input);
+        
+        //Send the security token to the testbench.
+        fwrite($pipes[0], $token);
         fclose($pipes[0]);
+
+        //Let the process run...
         $return_value = proc_close($proc);
 
+        //And read the program's stdout/stderr.
         $this->task->stdout = file_get_contents($binfile.'.out');
-        $this->task->stderr = file_get_contents($binfile.'.err');
+        $stderr = file_get_contents($binfile.'.err');
+
+        //Extract any control directives from the standard error.
+        list($this->task->stderr, $this->task->output) = self::extract_directives($stderr, $token);
 
         if ($return_value == 255) {
             throw new onlinejudge_exception('sandboxerror', $return_value);
@@ -179,7 +195,49 @@ class judge_sandbox extends judge_base {
             throw new onlinejudge_exception('sandboxerror', $return_value);
         }
 
-        $this->task->status = $this->diff();
+        $this->task->status = ONLINEJUDGE_STATUS_ACCEPTED;
+    }
+
+    /**
+     * Analyzes the standard error output of a C program and extracts
+     * any lines starting with the given token.
+     */
+    static function extract_directives($text, $token) {
+
+      $non_directives = '';
+      $directives = '';
+
+      //Get the length of the token, for later use.
+      $token_length = strlen($token);
+
+      //Iterate over the total lines in the array.
+      //[What I wouldn't give to be using a nice functional language for this.]
+      foreach(explode("\n", $text) as $line) {
+
+        //Add a newline to the end of each line...
+        $line = $line . "\n";
+
+        //If this is a directive, add it to our directives string.
+        if(substr($line, 0, $token_length) == $token) {
+          $directives .= substr($line, $token_length);
+        }
+        //Otherwise, add it to our non-directives string.
+        else {
+          $non_directives .= $line; 
+        }
+      }
+
+      //Return the two strings.
+      return array($non_directives, $directives);
+    }
+
+    /**
+     * Generates a short random string. These are passed to the testbench, and are
+     * used to differentiate output from the user-code (which doesn't know the token) from 
+     * output from the testbench (which does).
+     */ 
+    static function generate_token() {
+        return md5(microtime(true).mt_rand(10000,90000));
     }
 
     /**

@@ -101,6 +101,37 @@ function xmldb_local_onlinejudge_upgrade($oldversion=0) {
         upgrade_plugin_savepoint(true, 2011102401, 'local', 'onlinejudge');
     }
 
+
+    if ($oldversion < 2013041000) {
+
+        // Define field slot to be added to onlinejudge_tasks
+        $table = new xmldb_table('onlinejudge_tasks');
+        $field = new xmldb_field('slot', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'deleted');
+
+        // Conditionally launch add field slot
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // onlinejudge savepoint reached
+        upgrade_plugin_savepoint(true, 2013041000, 'local', 'onlinejudge');
+    }
+
+
+    if ($oldversion < 2013041001) {
+
+        // Rename field cmid on table onlinejudge_tasks to NEWNAMEGOESHERE
+        $table = new xmldb_table('onlinejudge_tasks');
+        $field = new xmldb_field('cmid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'id');
+
+        // Launch rename field cmid
+        $dbman->rename_field($table, $field, 'instanceid');
+
+        // onlinejudge savepoint reached
+        upgrade_plugin_savepoint(true, 2013041001, 'local', 'onlinejudge');
+    }
+
+
     echo $OUTPUT->notification(get_string('upgradenotify', 'local_onlinejudge'), 'notifysuccess');
 
     return true;

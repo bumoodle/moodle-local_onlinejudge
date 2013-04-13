@@ -3,7 +3,7 @@
 // Threshhold to prevent further rejudge-all requests
 define('PREVENTION_THRESHHOLD', 500);
 
-require_once(dirname(__FILE__).'/../../../../config.php');
+require_once(dirname(__FILE__).'/../../../../../../../config.php');
 require_once("$CFG->dirroot/mod/assignment/lib.php");
 require_once("$CFG->dirroot/mod/assignment/type/onlinejudge/assignment.class.php");
 

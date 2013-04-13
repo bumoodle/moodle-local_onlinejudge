@@ -31,7 +31,8 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(dirname(__FILE__).'/../../../../config.php');
+//require_once(dirname(__FILE__).'/../../../../config.php');
+require_once(dirname(__FILE__).'/../../../../../../../config.php');
 require_once("$CFG->dirroot/mod/assignment/lib.php");
 require_once('testcase_form.php');
 
@@ -90,6 +91,8 @@ if ($testform->is_cancelled()){
             }
             continue;
         }
+
+        $testcase = new stdClass;
 
         if (isset($fromform->usefile[$i])) {
             $testcase->usefile = true;

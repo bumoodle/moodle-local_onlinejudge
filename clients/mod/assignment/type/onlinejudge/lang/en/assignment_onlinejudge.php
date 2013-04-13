@@ -36,7 +36,7 @@ $string['addtestcases'] = 'Add {$a} more testcase(s)';
 $string['assignmentlangs'] = 'Programming language';
 $string['badtestcasefile'] = 'This file does not exist or can not be read';
 $string['cannotruncompiler'] = 'Can not execute the script of compiler';
-$string['case'] = 'Case {$a}:';
+$string['case'] = 'Problem {$a}:';
 $string['compileonly'] = 'Compile only';
 $string['compileonly_help'] = 'If select yes, the submissions will be compiled but not executed. Teachers must grade manually.';
 $string['compiler'] = 'Compiler';
@@ -64,7 +64,7 @@ $string['inputfile'] = 'Input file';
 $string['inputfile_help'] = 'The data in the file will be sent to the stdin of submitted programs.
 
 If the file is missing, the testcase will be skipped.';
-$string['judgetime'] = 'Judge time';
+$string['judgetime'] = 'Graded';
 $string['managetestcases'] = 'Manage testcases';
 $string['maxcpuusage'] = 'Maximum CPU usage';
 $string['maximumfilesize'] = 'Maximum source file size';
@@ -81,6 +81,7 @@ $string['outputfile_help'] = 'The data in the file will be compared with submiss
 
 If the file is missing, the testcase will be skipped.';
 $string['pluginname'] = 'Online Judge';
+$string['problem'] = 'Problem {$a}.';
 $string['ratiope'] = 'Ratio for presentation error';
 $string['ratiope_help'] = 'Grade for presentation error is equal to testcase\'s max grade times this ratio.
 
@@ -112,12 +113,8 @@ $string['status_help'] = 'Status indicates the results given by the online judge
 * Runtime Error - Your program performed an illegal operation. Perhaps it was an attempt to access unaccessible memory or call illegal instructions. Grade is 0.
 * Time-Limit Exceed - Your program has used up the maximum CPU time allowed. Grade is 0.
 * Wrong Answer - The output of your program does not match with the standard answer. Grade is 0.';
-$string['subgrade'] = 'Grade';
-$string['subgrade_help'] = 'How many points can students obtain after passing the test.
-
-If the assignment\'s max grade is set to 50, and this testcase\'s grade is set to 20%, then students who pass the test will earn 10 points and who can not pass will get zero. The final grade is the sum of all points gotten from each testcase. If the sum is larger than the assignment\'s max grade, the max grade will be used as the final grade.
-
-The sum of all testcases\' grades is <em>not</em> required to be 100%. Therefore, you can leave some points for manual grading if the sum is below 100%. And also, you can make the sum be over 100% so that not all testcases are required to pass.';
+$string['subgrade'] = 'Weight';
+$string['subgrade_help'] = 'The weight afforded to this particular set of tests. Weights need not add to 100%; if a system has two weight of 25% and 25%, each will be given half of the grade.';
 $string['successrate'] = 'Success rate';
 $string['testcases'] = 'Test Cases';
 $string['testcases_help'] = 'Each testcase will be applied to the submissions and judged seperately. E.g. if there are three testcases, one submission will run three times to test different case.';

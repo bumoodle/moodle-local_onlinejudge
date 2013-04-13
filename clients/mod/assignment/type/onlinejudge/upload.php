@@ -25,7 +25,9 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(dirname(dirname(dirname(dirname(dirname(__FILE__))))).'/config.php');
+#require_once(dirname(dirname(dirname(dirname(dirname(__FILE__))))).'/config.php');
+require_once('../../../../../../../config.php');
+
 // upload_form.php of upload will be used
 // require_once(dirname(__FILE__).'/upload_form.php');
 require_once(dirname(__FILE__).'/assignment.class.php');

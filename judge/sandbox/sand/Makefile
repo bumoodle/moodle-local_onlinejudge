@@ -91,7 +91,7 @@ open_test: testcase/open.c
 	$(CC) $(CCFLAGS) --static -o $@ $+
 
 memlimit: memlimit_test sand
-	./runtest.sh 3 -l memory=1048576 $<
+	#./runtest.sh 3 -l memory=1048576 $<
 
 memlimit_test: testcase/memlimit.c
 	$(CC) $(CCFLAGS) --static -o $@ $+

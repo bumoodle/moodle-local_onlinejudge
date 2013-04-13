@@ -41,6 +41,7 @@ $taskid = required_param('task', PARAM_INT);
 $ajax = optional_param('ajax', 0, PARAM_BOOL);
 
 $task = onlinejudge_get_task($taskid);
+
 if (empty($task)) {
     print_error('invalidtaskid', 'local_onlinejudge', '', $taskid);
 }
@@ -49,10 +50,10 @@ $context = get_context_instance(CONTEXT_MODULE, $task->cmid);
 
 $PAGE->set_url('/mod/assignment/type/onlinejudge/details.php');
 $PAGE->set_pagelayout('popup');
-$PAGE->set_context($context);
+//$PAGE->set_context($context);
 $PAGE->set_title(get_string('details', 'local_onlinejudge'));
 $PAGE->set_heading(get_string('details', 'local_onlinejudge'));
-$PAGE->set_course($COURSE);
+//$PAGE->set_course($COURSE);
 $PAGE->navbar->add(get_string('details', 'local_onlinejudge'));
 
 if ($ajax) {
@@ -68,7 +69,7 @@ if ($task->userid != $USER->id) {
 // fields of table tasks which should be shown to teachers
 $sensitive_fields = array('stdout', 'stderr', 'infoteacher');
 // fields of table tasks which should be shown to students
-$normal_fields = array('compileroutput', 'memusage', 'cpuusage', 'infostudent');
+$normal_fields = array('output', 'compileroutput', 'memusage', 'cpuusage', 'infostudent');
 
 $task = (array)$task; // Easier to enum
 
@@ -76,6 +77,7 @@ $table = new html_table();
 $table->attributes['class'] = 'generaltable';
 
 foreach ($task as $key => $content) {
+
     if ((!in_array($key, $normal_fields) and !in_array($key, $sensitive_fields))
         or (in_array($key, $sensitive_fields) and !has_capability('local/onlinejudge:viewsensitive', $context))) {
         continue;

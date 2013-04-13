@@ -161,7 +161,13 @@ function get_one_unjudged_task() {
 
     flock($LOCK, LOCK_EX); // try locking, but ignore if not available (eg. on NFS and FAT)
     try {
-        if ($task = $DB->get_record('onlinejudge_tasks', array('status' => ONLINEJUDGE_STATUS_PENDING), '*', IGNORE_MULTIPLE)) {
+
+        //Get a single task from the list of unjudged task, _sorted by id_, so we always serve the tasks in the order they enter.
+        $tasks = $DB->get_records('onlinejudge_tasks', array('status' => ONLINEJUDGE_STATUS_PENDING), 'id', '*', 0, 1);
+        $task = reset($tasks);
+
+        //If we were able to get a task, set it to "currently being judged".
+        if ($task) {
             $DB->set_field('onlinejudge_tasks', 'status', ONLINEJUDGE_STATUS_JUDGING, array('id' => $task->id));
         }
     } catch (Exception $e) {
