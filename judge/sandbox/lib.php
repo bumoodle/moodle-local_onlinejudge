@@ -124,9 +124,6 @@ class judge_sandbox extends judge_base {
             $new_contenthashs[] = $file->get_contenthash();
         }
 
-        //Append the testbench's hash to the list of the active file hashes.
-        $new_contenthashs[] = sha1($this->task->input);
-
         $result = $last_contenthashs == $new_contenthashs;
         $last_contenthashs = $new_contenthashs;
         return $result;
