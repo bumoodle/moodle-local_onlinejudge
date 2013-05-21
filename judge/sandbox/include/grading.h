@@ -74,11 +74,12 @@ static void award_points_unless(char condition, signed int mark, const char * me
   award_points_if(!condition, mark, message);
 }
 
+
 /**
  * Terminates grading. If add_one_hundred is set, a hundred points are added.
  * This statement forces the testbench to exit!
  */
-static void end_grading(char add_one_hundred) {
+static int end_grading(char add_one_hundred) {
 
   //If the add_one_hundred option is set, add 100 points.
   if(add_one_hundred) {
@@ -87,4 +88,29 @@ static void end_grading(char add_one_hundred) {
 
   //Force grading to terminate.
   exit(0);
+  return 0;
+}
+
+/**
+ * If the condition is met,
+ * removes the given amount of points, and then forces the testbench to exit.
+ * Should only be used in subtractive grading.
+ */ 
+static void fail_if(char condition, signed int mark, const char * message) {
+    if(condition) {
+        points_off(mark, message);
+        end_grading(1);
+    }
+}
+
+/**
+ * Unless the given the condition is met,
+ * removes the given amount of points, and then forces the testbench to exit.
+ * Should only be used in subtractive grading.
+ */ 
+static void fail_unless(char condition, signed int mark, const char * message) {
+    if(!condition) {
+        points_off(mark, message);
+        end_grading(1);
+    }
 }
